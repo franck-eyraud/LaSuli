@@ -85,6 +85,9 @@ const model = (function () {
 
 	const getViewpoint = async (id) => {
 		let view = (await db.getView(`/viewpoint/${id}`))[id];
+		if (!view) {
+			return {id:id,topics:[]};
+		}
 		let vp = {
 			id: id,
 			user: view.user,
