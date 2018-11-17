@@ -8,7 +8,11 @@ import model from './model.js';
 
 const errorHandler = (error, tabId) => {
 	console.error(error);
-	button.setBadgeText({text: 'err', tabId});
+	browser.notifications.create({
+		type:"basic",
+		title:"LaSuli error",
+		message:String(error)
+	});
 };
 
 let button = browser.browserAction,
@@ -29,18 +33,18 @@ const setHLNumber = (number,tabId) => {
 	if (typeof number !== "number") text=null;
 	else if (number < 0) text='…';
 	else text=String(number);
-	button.setBadgeText({text,tabId});
+	return button.setBadgeText({text,tabId});
 }
 
 const updateHighlightNumber = async (tabId, url, refresh) => {
 	// The page must be whitelisted
 	let isOk = await model.isWhitelisted(url);
 	if (!isOk) {
-		button.setIcon({tabId});
-		setHLNumber(false,tabId);
-		return;
+		return button.setIcon({tabId}).then(x => {
+			return setHLNumber(false,tabId);
+		});
 	} else {
-		button.setIcon({
+		return button.setIcon({
 			path: {32: '/button/laSuli-32.png'},
 			tabId
 		});
@@ -86,18 +90,26 @@ button.onClicked.addListener(() => browser.sidebarAction.open());
  * Message handler
  */
 browser.runtime.onMessage.addListener(async (msg) => {
+	let res;
 	switch (msg.aim) {
 		case 'getResource':
 			return model.getResource(msg.uri, msg.reload);
 		case 'isWhitelisted':
 			return model.isWhitelisted(msg.uri);
 		case 'createHighlight':
-			return model.createHighlight(msg.uri,msg.viewpoint,msg.topic,msg.coordinates);
+			res=model.createHighlight(msg.uri,msg.viewpoint,msg.topic,msg.coordinates);
+			break;
 		case 'removeHighlight':
 			return model.removeHighlight(msg.uri,msg.viewpoint,msg.topic,msg.fragId);
 		case 'setHLNumber':
 			if (msg.count && msg.tabId) {
-				return setHLNumber(msg.count,msg.tabId);
+				res=setHLNumber(msg.count,msg.tabId);
+			} else {
+				res=Promise.reject("missing count or tabId");
 			}
+			break;
+		default:
+			res=Promise.reject("unknown message "+$msg.aim);
 	}
+	return res.catch(errorHandler);
 });

@@ -48,7 +48,7 @@ export default class Display extends React.Component {
 		</div>);
 	}
 
-	async _createFrag(tab,topic) {
+	_createFrag(tab,topic) {
 		function addHL(vp,hl) {
 			hl.text=[].concat(hl.text);
 			hl.coordinates=[hl.coordinates];
@@ -57,15 +57,16 @@ export default class Display extends React.Component {
 			return vp;
 		}
 		if (this.state.vpId) {
-			return this.props.createFrag(tab,this.state.vpId,topic).then( hl => {
-				if (hl.topic) {
-					this.setState(previousState => {
-						addHL(previousState.vp,hl);
-						return previousState;
-					});
-				}
-				return hl;
-			});
+			return this.props.createFrag(tab,this.state.vpId,topic)
+				.then( hl => {
+					if (hl.topic) {
+						this.setState(previousState => {
+							addHL(previousState.vp,hl);
+							return previousState;
+						});
+					}
+					return hl;
+				});
 		}
 	}
 

@@ -39,28 +39,32 @@ const model = (function () {
 		}).join("");
 	}
 
-	const createHighlight = async (uri,viewpoint,topic,coordinates) => {
+	const createHighlight = (uri,viewpoint,topic,coordinates) => {
 		if (!topic) topic=getUuid();
 		if (!viewpoint) viewpoint=getUuid();
-		let items=await getItems(uri);
-		if (items && items.item && items.item.length>0) {
-			let itemId=items.item[0].id;
-			let item=await db.get({_id:itemId})
-				.catch(x=>console.error(x));
-			var uuid=getUuid();
-			item.highlights=item.highlights || {};
-			let hl={
-				coordinates:[coordinates.startPos,coordinates.endPos],
-				text:coordinates.text,
-				viewpoint:viewpoint,
-				topic:topic
-			};
-			item.highlights[uuid]=hl;
-			let res=await db.post(item);
-			hl.id=uuid;
-			return hl;
-		}
-		return false;
+		return getItems(uri)
+			.then(items => {
+				if (items && items.item && items.item.length>0) {
+					let itemId=items.item[0].id;
+					return db.get({_id:itemId});
+				}
+				throw new Error ("no items found for "+uri);
+			})
+			.then(item => {
+				var uuid=getUuid();
+				item.highlights=item.highlights || {};
+				let hl={
+					coordinates:[coordinates.startPos,coordinates.endPos],
+					text:coordinates.text,
+					viewpoint:viewpoint,
+					topic:topic
+				};
+				item.highlights[uuid]=hl;
+				return db.post(item).then(createdItem => {
+					hl.id=uuid;
+					return hl;
+				});
+			});
 	}
 
 	const removeHighlight = async (uri,viewpoint,topic,fragId) => {
@@ -76,7 +80,7 @@ const model = (function () {
 			}
 			return new Promise().resolve();
 		}
-		return false
+		return new Promise().reject(`can't find item for ${uri}`);
 	}
 
 	/*

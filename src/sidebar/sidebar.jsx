@@ -105,22 +105,21 @@ class Sidebar extends React.Component {
 		return res;
 	}
 
-	async _createFrag(tab,viewpoint,topic) {
+	_createFrag(tab,viewpoint,topic) {
 		let uri=this.state.uri;
-		let coordinates = await browser.tabs.sendMessage(tab.id,{aim:"getCoordinates"});
-		if (!coordinates) {
-			console.error("error getting coordinates");
-			alert("error getting coordinates");
-			return;
-		}
-
-		let res=browser.runtime.sendMessage({
-			aim:'createHighlight',uri,viewpoint,topic,coordinates
-		}).then(x => {
-			browser.tabs.sendMessage(tab.id,{aim:"cleanSelection"});
-			return x;
-		});
-		return res;
+		return browser.tabs.sendMessage(tab.id,{aim:"getCoordinates"})
+			.then(coordinates => {
+				if (!coordinates) {
+					throw new Error("error getting coordinates");
+				}
+				return browser.runtime.sendMessage({
+					aim:'createHighlight',uri,viewpoint,topic,coordinates
+				});
+			})
+			.then(x => {
+				browser.tabs.sendMessage(tab.id,{aim:"cleanSelection"});
+				return x;
+			});
 	}
 
 
