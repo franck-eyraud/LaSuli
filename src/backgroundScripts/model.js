@@ -81,9 +81,30 @@ const model = (function () {
 				if (fragId in item.highlights) {
 					delete item.highlights[fragId];
 					return db.post(item);
-				} else {
 				}
 			});
+	}
+
+	const renameTopic = (vpId,topicId,newName) => {
+		return db.get({_id:vpId})
+		.catch(x => {
+			return {_id:vpId,topics:{},viewpoint_name:"",users:[]};
+		})
+		.then(vp => {
+			if (vp.topics.constructor === Array) vp.topics={};
+			vp.viewpoint_name=vp.viewpoint_name || "Sans nom";
+			vp.users=vp.users || [];
+			let topic=vp.topics[topicId] || {};
+			if (!topic.name || topic.name != newName) {
+				topic.name=newName;
+				vp.topics[topicId]=topic;
+				return db.post(vp).then( x => {
+					return topic;
+				});
+			} else {
+				return topic;
+			}
+		});
 	}
 
 	/*
@@ -244,7 +265,8 @@ const model = (function () {
 		isWhitelisted,
 		getResource,
 		createHighlight,
-		removeHighlight
+		removeHighlight,
+		renameTopic
 	};
 }());
 

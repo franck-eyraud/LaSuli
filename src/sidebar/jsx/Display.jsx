@@ -10,6 +10,7 @@ export default class Display extends React.Component {
 		browser.contextMenus.removeAll();
 		this._deleteFrag=this._deleteFrag.bind(this);
 		this._createFrag=this._createFrag.bind(this);
+		this._renameTopic=this._renameTopic.bind(this);
 		this._contextMenuListener=this._contextMenuListener.bind(this);
 	}
 
@@ -86,6 +87,18 @@ export default class Display extends React.Component {
 		}
 	}
 
+	_renameTopic(topic,newName) {
+		let viewpoint=this.state.vpId;
+		return browser.runtime.sendMessage({
+			aim:'renameTopic',viewpoint,topic,newName
+		}).then(x => {
+			this.setState(previousState => {
+				previousState.vp.topics[topic].name=newName;
+				return previousState;
+			});
+		});
+	}
+
 	async _highlight(labels, fragments) {
 		return this._loadScript().then(_ => browser.tabs.sendMessage(this.props.tabId, {
 			aim: 'highlight',
@@ -127,7 +140,7 @@ export default class Display extends React.Component {
       let vp = this.props.res.viewpoints[id];
       let vpDetails = this._vpDetails.bind(this, vp, id);
       return (
-        <Viewpoint key={id} details={vp} onClick={vpDetails}
+        <Viewpoint key={id} id={id} details={vp} onClick={vpDetails}
         color={labels[id].color} />
       );
     });
@@ -153,7 +166,8 @@ export default class Display extends React.Component {
 		return Object.keys(this.state.vp.topics).map((id,i) =>
 			<Topic details={this.state.vp.topics[id]} id={id} index={i} vpId={this.state.vpId}
 				color={labels[id].color} name={this.state.vp.topics[id].name}
-				createFrag={this._createFrag} deleteFrag={this._deleteFrag} />
+				createFrag={this._createFrag} deleteFrag={this._deleteFrag}
+				renameTopic={this._renameTopic} />
 		);
 	}
 

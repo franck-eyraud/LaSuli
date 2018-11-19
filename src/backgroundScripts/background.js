@@ -105,6 +105,9 @@ browser.runtime.onMessage.addListener(async (msg) => {
 		case 'removeHighlight':
 			res=model.removeHighlight(msg.uri,msg.viewpoint,msg.topic,msg.fragId);
 			break;
+		case 'renameTopic':
+			res=model.renameTopic(msg.viewpoint,msg.topic,msg.newName);
+			break;
 		case 'setHLNumber':
 			if (msg.count && msg.tabId) {
 				res=setHLNumber(msg.count,msg.tabId);
