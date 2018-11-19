@@ -97,12 +97,11 @@ class Sidebar extends React.Component {
 		}
 	}
 
-	async _deleteFrag(viewpoint,topic,fragId) {
+	_deleteFrag(viewpoint,topic,fragId) {
 		let uri=this.state.uri;
-		let res=browser.runtime.sendMessage({
+		return browser.runtime.sendMessage({
 			aim:'removeHighlight',uri,viewpoint,topic,fragId
 		});
-		return res;
 	}
 
 	_createFrag(tab,viewpoint,topic) {
@@ -121,7 +120,6 @@ class Sidebar extends React.Component {
 				return x;
 			});
 	}
-
 
 }
 

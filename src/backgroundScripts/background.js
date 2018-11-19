@@ -93,14 +93,17 @@ browser.runtime.onMessage.addListener(async (msg) => {
 	let res;
 	switch (msg.aim) {
 		case 'getResource':
-			return model.getResource(msg.uri, msg.reload);
+			res=model.getResource(msg.uri, msg.reload);
+			break;
 		case 'isWhitelisted':
-			return model.isWhitelisted(msg.uri);
+			res=model.isWhitelisted(msg.uri);
+			break;
 		case 'createHighlight':
 			res=model.createHighlight(msg.uri,msg.viewpoint,msg.topic,msg.coordinates);
 			break;
 		case 'removeHighlight':
-			return model.removeHighlight(msg.uri,msg.viewpoint,msg.topic,msg.fragId);
+			res=model.removeHighlight(msg.uri,msg.viewpoint,msg.topic,msg.fragId);
+			break;
 		case 'setHLNumber':
 			if (msg.count && msg.tabId) {
 				res=setHLNumber(msg.count,msg.tabId);

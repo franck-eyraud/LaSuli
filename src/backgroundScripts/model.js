@@ -5,7 +5,7 @@ import Viewpoint from './Viewpoint.js';
 const model = (function () {
 	let cache = {};
 	let db = require('hypertopic')([
-		'http://argos2.hypertopic.org',
+		'http://argos2.test.hypertopic.org',
 		'http://cassandre.hypertopic.org'
 	]);
 
@@ -67,20 +67,23 @@ const model = (function () {
 			});
 	}
 
-	const removeHighlight = async (uri,viewpoint,topic,fragId) => {
-		let items=await getItems(uri);
-		if (items && items.item && items.item.length>0) {
-			let itemId=items.item[0].id;
-			let item=await db.get({_id:itemId})
-				.catch(x=>console.error(x));
-			if (fragId in item.highlights) {
-				delete item.highlights[fragId];
-				let res=await db.post(item);
-				return res;
-			}
-			return new Promise().resolve();
-		}
-		return new Promise().reject(`can't find item for ${uri}`);
+	const removeHighlight = (uri,viewpoint,topic,fragId) => {
+		return getItems(uri)
+			.then(items => {
+				if (items && items.item && items.item.length>0) {
+					let itemId=items.item[0].id;
+					return db.get({_id:itemId});
+				} else {
+					throw new Error(`can't find item for ${uri}`);
+				}
+			})
+			.then(item => {
+				if (fragId in item.highlights) {
+					delete item.highlights[fragId];
+					return db.post(item);
+				} else {
+				}
+			});
 	}
 
 	/*

@@ -70,7 +70,7 @@ export default class Display extends React.Component {
 		}
 	}
 
-	async _deleteFrag(topic,fragId) {
+	_deleteFrag(topic,fragId) {
 		function removeHL(vp) {
 			vp.topics[topic]=vp.topics[topic].filter(hl => {return hl.id!=fragId});
 			return vp;
