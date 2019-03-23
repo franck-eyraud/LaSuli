@@ -51,52 +51,86 @@ const model = (function () {
 		}).join("");
 	}
 
-  const createHighlight = async (uri,viewpoint,topic,coordinates) => {
+  const createHighlight = (uri,viewpoint,topic,coordinates) => {
     if (!topic) topic=getUuid();
     if (!viewpoint) viewpoint=getUuid();
-    let db = await getDB();
-    let items=await getItems(uri);
-    if (items && items.item && items.item.length>0) {
-      let itemId=items.item[0].id;
-      let item=await db.get({_id:itemId})
-        .catch(e => {
-           return {
-             _id: itemId,
-             item_corpus: items.item[0].corpus
-           };
-         });
-      var uuid=getUuid();
-      item.highlights=item.highlights || {};
-      let hl={
-        coordinates:[coordinates.startPos,coordinates.endPos],
-        text:coordinates.text,
-        viewpoint:viewpoint,
-        topic:topic
-      };
-      item.highlights[uuid]=hl;
-      let res=await db.post(item);
-      hl.id=uuid;
-      return hl;
-    }
-    return false;
+    return getItems(uri)
+      .then(items => {
+        if (items && items.item && items.item.length>0) {
+          let itemId=items.item[0].id;
+          return getDB()
+            .then(db => db.get({_id:itemId}))
+            .catch(e => {
+               return {
+                 _id: itemId,
+                 item_corpus: items.item[0].corpus
+               };
+             });
+        }
+        throw new Error ("no items found for "+uri);
+      })
+      .then(item => {
+        var uuid=getUuid();
+        item.highlights=item.highlights || {};
+        let hl={
+          coordinates:[coordinates.startPos,coordinates.endPos],
+          text:coordinates.text,
+          viewpoint:viewpoint,
+          topic:topic
+        };
+        item.highlights[uuid]=hl;
+        return getDB()
+          .then(db => db.post(item))
+          .then(createdItem => {
+            hl.id=uuid;
+            return hl;
+          });
+      });
   }
 
-	const removeHighlight = async (uri,viewpoint,topic,fragId) => {
-    let db = await getDB();
-		let items=await getItems(uri);
-		if (items && items.item && items.item.length>0) {
-			let itemId=items.item[0].id;
-			let item=await db.get({_id:itemId})
-				.catch(x=>console.error(x));
-			if (fragId in item.highlights) {
-				delete item.highlights[fragId];
-				let res=await db.post(item);
-				return res;
-			}
-			return new Promise().resolve();
-		}
-		return false
-	}
+  const removeHighlight = (uri,viewpoint,topic,fragId) => {
+    return getItems(uri)
+      .then(items => {
+        if (items && items.item && items.item.length>0) {
+          let itemId=items.item[0].id;
+          return getDB()
+            .then(db => db.get({_id:itemId}));
+        } else {
+          throw new Error(`can't find item for ${uri}`);
+        }
+      })
+      .then(item => {
+        if (fragId in item.highlights) {
+          delete item.highlights[fragId];
+          return getDB()
+            .then(db => db.post(item));
+        } else {
+        }
+      });
+  }
+
+  const renameTopic = (vpId,topicId,newName) => {
+    return getDB().then(db => db.get({_id:vpId}))
+    .catch(x => {
+      return {_id:vpId,topics:{},viewpoint_name:"",users:[]};
+    })
+    .then(vp => {
+      if (vp.topics.constructor === Array) vp.topics={};
+      vp.viewpoint_name=vp.viewpoint_name || "Sans nom";
+      vp.users=vp.users || [];
+      let topic=vp.topics[topicId] || {};
+      if (!topic.name || topic.name != newName) {
+        topic.name=newName;
+        vp.topics[topicId]=topic;
+        return getDB().then(db => db.post(vp))
+          .then( x => {
+            return topic;
+          });
+      } else {
+        return topic;
+      }
+    });
+  }
 
 	/*
 	 * Fetch the item(s) for the given resource (URI)
@@ -249,7 +283,7 @@ const model = (function () {
     .then((x) => x.json());
 
   const openSession = (user, password) => getSessionURI()
-    .then((x) => fetch(x, { 
+    .then((x) => fetch(x, {
       method:'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -280,7 +314,8 @@ const model = (function () {
     isWhitelisted,
     getResource,
     createHighlight,
-    removeHighlight
+    removeHighlight,
+    renameTopic
   };
 }());
 
