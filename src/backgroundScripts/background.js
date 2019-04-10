@@ -8,11 +8,13 @@ import model from './model.js';
 
 const errorHandler = (error, tabId) => {
   console.error(error);
-  browser.notifications.create({
-    type:"basic",
-    title:"LaSuli error",
-    message:String(error)
-  });
+  if (!(error instanceof DOMException)) {
+    browser.notifications.create({
+      type:"basic",
+      title:"LaSuli error",
+      message:String(error)
+    });
+  }
   return Promise.reject();
 };
 
